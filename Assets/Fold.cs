@@ -39,6 +39,10 @@ public class Fold : MonoBehaviour {
 		public float A(){
 			return angle;
 		}
+
+		public Vector3 V(){
+			return v;
+		}
 	}
 
 
@@ -46,7 +50,7 @@ public class Fold : MonoBehaviour {
 	float numRows;
 	int numV, rowSize;
 	public PlaneVector[,] vectors;
-	public float speed = 5;
+	public float speed = 1f;
 	// Use this for initialization
 	void Start () {
 		mesh = GetComponent<MeshFilter>().mesh;
@@ -56,7 +60,7 @@ public class Fold : MonoBehaviour {
 		int total = 0;
 		for(int i = 0; i< vectors.GetLength(0); i++){
 			for(int j = 0; j< vectors.GetLength(1); j++){
-				vectors[i, j] = mesh.vertices[total];
+				vectors[i, j] = new PlaneVector(mesh.vertices[total]);
 				total++;
 			}
 		}
@@ -66,9 +70,9 @@ public class Fold : MonoBehaviour {
 	void Update () {
 		Vector3[] vertices = mesh.vertices;
 		if(Input.GetKeyUp("space")){
-	    	vectors[0, 0] += new Vector3(0, 7, 0);
-	    	vectors[0, 1] += new Vector3(0, 5, 0);
-	        Debug.Log(vectors[0, 0]);
+	    	vectors[0, 0].addToVector(new Vector3(0, 7, 0));
+	    	vectors[0, 1].addToVector(new Vector3(0, 5, 0));
+	        Debug.Log(vectors[0, 0].V());
 		}
 
 		//to fold the plane in half, for every point below (or above, pick only one side)
@@ -76,23 +80,31 @@ public class Fold : MonoBehaviour {
 		// side, find the midpoint between the two and rotate 180 degrees
 		// around that midpoint.
 		// for ex the point at row 0, col 0 corresponds with point at row 10, col 0
-		Vector3 midpoint = (vectors[10, 0] - vectors[0,0]) *0.5f;
+		Vector3 midpoint = (vectors[10, 0].V() - vectors[0,0].V()) *0.5f;
 		Debug.Log(midpoint);
 		// the 2 points must have the same position on one plane,
 		// we must know which axis that is on. (in this case it's x)
 
-		if(vectors[0, 0] != vectors[10, 0]){
-			float newX = vectors[0, 0].X()
-			float newY = vectors[0, 0].Y()*Mathf.cos(vectors[0, 0].addToAngle(speed))
-
-			vectors[0, 0].setVector(new Vector3());
+		if(vectors[0, 0].A() < 180f){
+			vectors[0, 0].addToAngle(speed);
+			Debug.Log(vectors[0, 0].A());
+			float cosA = Mathf.Cos(vectors[0, 0].A());
+			float sinA = Mathf.Sin(vectors[0, 0].A());
+			float y = vectors[0, 0].Y();
+			float z = vectors[0, 0].Z();
+			float newX = vectors[0, 0].X();
+			// https://academo.org/demos/rotation-about-point/
+			// pretend y is y, and z is like x from that site ^
+			float newY = y*cosA - z*sinA;
+			float newZ = z*cosA - y*sinA;
+			vectors[0, 0].setVector(new Vector3(newX, newY, newZ));
 		}
 
 		// put the 2d array back into its original format
 		int total = 0;
 		for(int i = 0; i< vectors.GetLength(0); i++){
 			for(int j = 0; j< vectors.GetLength(1); j++){
-				vertices[total] = vectors[i, j];
+				vertices[total] = vectors[i, j].V();
 				total++;
 			}
 		}
