@@ -7,7 +7,7 @@ using UnityEditor;
 
 public class foldAtVerts : Editor {
 
-	void OnSceneGUI(){
+	/*void OnSceneGUI(){
 		Fold f = target as Fold;
 		if( f == null || f.mesh == null )
             return;
@@ -17,5 +17,5 @@ public class foldAtVerts : Editor {
 		Handles.Label(f.vectors[9, 6].V(), "vert " + 9+ ", "+ 6);
 		Handles.Label(f.vectors[0, 0].V(), "vert " + 0+ ", "+ 0);
 		Handles.Label(f.vectors[10, 10].V(), "vert " + 10+ ", "+ 10);
-	}
+	}*/
 }
