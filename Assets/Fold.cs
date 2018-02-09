@@ -9,11 +9,11 @@ public class Fold {
 	public string file_author;
 	public string frame_title;
 	public string frame_unit;
-	public double[] vertices_coords;
+	public double[][] vertices_coords;
 	public int[] edges_vertices;
 	public string[] edges_assignment;
 	public string[] frame_classes;
 	public string[] frame_attributes;
 	public int[] faces_vertices;
-	public double[] edges_foldAngles;
+	public double[][] edges_foldAngles;
 }
