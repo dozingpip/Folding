@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class filter : MonoBehaviour{
-	List<int[]> edgesAssigned(Fold fold, int[] target){
-		List<int[]> edgesAssigned = new List<int[]>();
+	List<Edge> edgesAssigned(Fold fold, Edge target){
+		List<Edge> edgesAssigned = new List<Edge>();
 		foreach(String assignment in fold.edges_assignment){
 			if(assignment == target){
 				edgesAssigned.add(assignment);
@@ -35,10 +35,6 @@ public class filter : MonoBehaviour{
 
 	List<Edge> unassignedEdges(Fold fold){
 		return edgesAssigned(fold, 'U');
-	}
-
-	keysStartingWith(Fold fold, String prefix){
-		for()
 	}
 
 	int numType(Fold fold, String type){
@@ -147,5 +143,12 @@ public class filter : MonoBehaviour{
 		);
 	}
 
+	float ang2D(Vector2 a), double eps){
+		if(Vector2.sqrMagnitude(a)< eps){
+			return null;
+		}
+		Mathf.Atan(a.y, a.x);
+	}
 
+	//List<Vector2> sortByAngle(List<Vector2> points, Vector2 origin = new Vector2(0, 0), )
 }

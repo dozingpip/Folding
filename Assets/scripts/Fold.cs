@@ -15,6 +15,7 @@ public class Fold {
 	public string[] frame_attributes;
 	public int[] faces_vertices;
 	public double[] edges_foldAngles;
+	List<Vector3> vertices_vertices;
 
 	public Fold(string _file_spec,
 	 string _file_creator,
