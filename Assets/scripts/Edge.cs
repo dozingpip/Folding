@@ -2,15 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Edge : MonoBehaviour {
+public class Edge {
+	public int[] points;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
+	public Edge(int[] p){
+		points = p;
 	}
 }
