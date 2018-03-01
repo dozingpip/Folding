@@ -9,13 +9,13 @@ public class Fold {
 	public string frame_title;
 	public string frame_unit;
 	public Vector3[] vertices_coords;
-	public int[] edges_vertices;
+	public int[][] edges_vertices;
 	public string[] edges_assignment;
 	public string[] frame_classes;
 	public string[] frame_attributes;
 	public int[] faces_vertices;
 	public double[] edges_foldAngles;
-	List<Vector3> vertices_vertices;
+	public List<List<int>> vertices_vertices;
 
 	public Fold(string _file_spec,
 	 string _file_creator,
@@ -23,7 +23,7 @@ public class Fold {
 	 string _frame_title,
 	 string _frame_unit,
 	 Vector3[] _vertices_coords,
-	 int[] _edges_vertices,
+	 int[][] _edges_vertices,
 	 string[] _edges_assignment,
 	 string[] _frame_classes,
 	 string[] _frame_attributes,

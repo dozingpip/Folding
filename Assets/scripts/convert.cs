@@ -1,3 +1,8 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
 public class convert{
   Fold edges_vertices_to_vertices_vertices_unsorted(Fold fold){
     fold.vertices_vertices = filter.edges_vertices_to_vertices_vertices(fold);

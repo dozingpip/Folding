@@ -1,70 +1,63 @@
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class filter : MonoBehaviour{
-	List<Edge> edgesAssigned(Fold fold, Edge target){
-		List<Edge> edgesAssigned = new List<Edge>();
-		foreach(String assignment in fold.edges_assignment){
-			if(assignment == target){
-				edgesAssigned.add(assignment);
+public class filter{
+	List<int[]> edgesAssigned(Fold fold, String target){
+		List<int[]> edgesAssigned = new List<int[]>();
+		for(int i = 0; i< fold.edges_assignment.Length; i++){
+			if(fold.edges_assignment[i] == target){
+				edgesAssigned.Add(fold.edges_vertices[i]);
 			}
 		}
 		return edgesAssigned;
 	}
 
-	List<Edge> mountainEdges(Fold fold){
-		return edgesAssigned(fold, 'M');
+	List<int[]> mountainEdges(Fold fold){
+		return edgesAssigned(fold, "M");
 	}
 
-	List<Edge> valleyEdges(Fold fold){
-		return edgesAssigned(fold, 'V');
+	List<int[]> valleyEdges(Fold fold){
+		return edgesAssigned(fold, "V");
 	}
 
-	List<Edge> flatEdges(Fold fold){
-		return edgesAssigned(fold, 'F');
+	List<int[]> flatEdges(Fold fold){
+		return edgesAssigned(fold, "F");
 	}
 
-	List<Edge> flatEdges(Fold fold){
-		return edgesAssigned(fold, 'F');
+	List<int[]> boundaryEdges(Fold fold){
+		return edgesAssigned(fold, "B");
 	}
 
-	List<Edge> boundaryEdges(Fold fold){
-		return edgesAssigned(fold, 'B');
-	}
-
-	List<Edge> unassignedEdges(Fold fold){
-		return edgesAssigned(fold, 'U');
+	List<int[]> unassignedEdges(Fold fold){
+		return edgesAssigned(fold, "U");
 	}
 
 	int numType(Fold fold, String type){
 		switch(type){
-			case 'vertices':
+			case "vertices":
 				return fold.vertices_coords.Length;
-				break;
-			case 'edges':
+			case "edges":
 				return Mathf.Max(fold.edges_vertices.Length, fold.edges_assignment.Length);
-				break;
-			case 'frames':
-				return Mathf.Max(fold.frame_classes.Length, fold.frame_attributes);
-				break;
-			case 'faces':
-				return fold.faces_vertices;
-				break;
-			default: break;
+			case "frames":
+				return Mathf.Max(fold.frame_classes.Length, fold.frame_attributes.Length);
+			case "faces":
+				return fold.faces_vertices.Length;
+			default: return 0;
 		}
 	}
 
 	int numVertices(Fold fold){
-		return numType(fold, 'vertices');
+		return numType(fold, "vertices");
 	}
 
 	int numEdges(Fold fold){
-		return numType(fold, 'edges');
+		return numType(fold, "edges");
 	}
 
 	int numFaces(Fold fold){
-		return numType(fold, 'faces');
+		return numType(fold, "faces");
 	}
 
 	/*
@@ -91,24 +84,25 @@ public class filter : MonoBehaviour{
     vertices_vertices[w].push v
   vertices_vertices
 	*/
-	List<Vector3> edges_vertices_to_vertices_vertices(Fold fold){
-		int numVertices = numVertices(fold);
-		List<Vector3> vertices_vertices = new List<Vector3>();
+	public List<List<int>> edges_vertices_to_vertices_vertices(Fold fold){
+		int num_vertices = numVertices(fold);
+		List<List<int>> vertices_vertices = new List<List<int>>();
 		foreach(int[] edge in fold.edges_vertices){
-			if(edge[0]<numVertices)
-				vertices_vertices.Add([]);
-			if(edge[1]<numVertices)
-				vertices_vertices.Add([]);
-
-			vertices_vertices.insert(v, w);
-			vertices_vertices.insert(w, v);
+			if(edge[0]< num_vertices){
+				vertices_vertices.Add(new List<int>());
+			}
+			if(edge[1]< num_vertices){
+				vertices_vertices.Add(new List<int>());
+			}
+			vertices_vertices[edge[0]].Add(edge[1]);
+			vertices_vertices[edge[1]].Add(edge[0]);
 		}
 		return vertices_vertices;
 	}
 
 	bool rangesDisjoint(float a1, float a2, float b1, float b2){
-		int aMax = Mathf.Max(a1, a2);
-		int aMin = Mathf.Min(a1, a2);
+		float aMax = Mathf.Max(a1, a2);
+		float aMin = Mathf.Min(a1, a2);
 		return (b1< aMin && b2>aMin) || (b1>aMax && aMax<b2);
 	}
 
@@ -130,6 +124,7 @@ public class filter : MonoBehaviour{
 			return -1;
 		else if(tsa==0)
 			return 0;
+		else return 0;
 	}
 
 	bool segmentsCross(Vector2 p0, Vector2 q0, Vector2 p1, Vector2 q1){
@@ -143,11 +138,12 @@ public class filter : MonoBehaviour{
 		);
 	}
 
-	float ang2D(Vector2 a), double eps){
-		if(Vector2.sqrMagnitude(a)< eps){
-			return null;
+	float ang2D(Vector2 a, double eps){
+		double sqrm = a.sqrMagnitude;
+		if(sqrm < eps){
+			return 0;
 		}
-		Mathf.Atan(a.y, a.x);
+		return Mathf.Atan2(a.y, a.x);
 	}
 
 	//List<Vector2> sortByAngle(List<Vector2> points, Vector2 origin = new Vector2(0, 0), )
