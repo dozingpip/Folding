@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class Fold {
+public class FoldJSON {
 	public string file_spec;
 	public string file_creator;
 	public string file_author;
