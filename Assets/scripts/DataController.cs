@@ -27,7 +27,7 @@ public class DataController : MonoBehaviour {
 			for(int i=0; i<meshV.Length; i++){
 				meshV[i] = new Vector3((float)fold.vertices_coords[i][0], (float)fold.vertices_coords[i][1], (float)fold.vertices_coords[i][2]);
 			}
-			meshToEdit.vertices = meshV;
+			//meshToEdit.vertices = meshV;
 		}
 	}
 
