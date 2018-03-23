@@ -2,18 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using UnityEngine.UI;
 
 public class Model : MonoBehaviour {
     public string file_name = "flappingBird";
     public string interpolate_to_file_name = "miura-ori";
     public float interpolateSpeed = 0.1f;
+    public Material material;
+    public GameObject pointInsta;
+    public GameObject lineInsta;
+    private List<string> foldFiles;
+    public string foldFilePath ="folds";
+    public Dropdown dropdown;
+
+    private List<GameObject> points;
+    private List<GameObject> edgeLines;
     private Fold fold;
     private Mesh mesh;
-    private Fold fold2;
-    Material material;
-    GameObject pointInsta;
-    GameObject lineInsta;
-    public List<string> foldFiles;
 
     // Use this for initialization
     void Start () {
@@ -28,34 +33,39 @@ public class Model : MonoBehaviour {
         //     // etc.
         // }
         // file_name = //currently selected option from foldFiles
-        material = Resources.Load("rando") as Material;
-        pointInsta = Resources.Load("Point") as GameObject;
-        lineInsta = Resources.Load("Line") as GameObject;
+        string path = Application.dataPath + "/Resources/"+foldFilePath;
+        string[] filePaths = Directory.GetFiles(@path, "*.fold");
+        List<string> dropOptions = new List<string>();
+        foreach(string fileName in filePaths){
+            dropOptions.Add(fileName);
+        }
+        dropdown.ClearOptions();
+        dropdown.AddOptions(dropOptions);
 
         fold = new Fold(file_name);
-        fold2 = new Fold(interpolate_to_file_name);
-        gameObject.AddComponent<MeshFilter>();
-        gameObject.AddComponent<MeshRenderer>();
+        
 
-        mesh = newMesh(fold, GetComponent<MeshFilter>().mesh);
-        GetComponent<MeshRenderer>().material = material;
-        for(int i = 0; i< mesh.vertices.Length; i++){
-            highlightPoint(i);
-        }
-        highlightEdge(1, 2);
+        createMesh();
+        
+        points = new List<GameObject>();
+        highlightAllPoints();
+
+        edgeLines = new List<GameObject>();
+        highlightAllEdges();
+        gameObject.tag = "fold";
     }
 
-    Mesh newMesh(Fold fold, Mesh mesh){
-        mesh.Clear();
-        List<Vector3> verts = new List<Vector3>();
-        for (int i = 0; i < fold.vertices_coords.Length; i++)
-        {
-            verts.Add(new Vector3((float)fold.vertices_coords[i][0],
-                                   (float)fold.vertices_coords[i][1],
-                                   (float)fold.vertices_coords[i][2]));
-        }
+    void Update(){
+        update();
+    }
 
-        mesh.vertices = verts.ToArray();
+    void createMesh(){
+        MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+        mesh = meshFilter.mesh;
+        gameObject.AddComponent<MeshRenderer>();
+        mesh.Clear();
+
+        updateMeshVerts();
 
         List<int> triangles = new List<int>();
 
@@ -90,51 +100,92 @@ public class Model : MonoBehaviour {
         }
         mesh.triangles = triangles.ToArray();
 
-        Vector2[] uv = new Vector2[verts.Count];
+        Vector2[] uv = new Vector2[mesh.vertices.Length];
         for (int i = 0; i < uv.Length; i++)
         {
-            uv[i] = new Vector2(verts[i].x+0.5f, verts[i].z+0.5f);
+            uv[i] = new Vector2(mesh.vertices[i].x+0.5f, mesh.vertices[i].z+0.5f);
         }
         mesh.uv = uv;
         // better way is to use the flat version of the model as a base and get
         // the corners and base the uv coordinates on distance from the 0, 0 corner
 
-        return mesh;
+        GetComponent<MeshRenderer>().material = material;
     }
 
-    void Update(){
-        //interpolate(Time.deltaTime);
+    void updateMeshVerts(){
+        mesh.vertices = fold.vertices_coords_toArray();
     }
 
-    void interpolate(float dt){
-        Debug.Log(fold.vertices_coords.Length);
-        Debug.Log(fold2.vertices_coords.Length);
-        if(fold.vertices_coords.Length == fold2.vertices_coords.Length){
-            for(int i = 0; i < fold.vertices_coords.Length; i++){
-                if(fold.vertices_coords[i].x< fold2.vertices_coords[i].x){
-                    fold.vertices_coords[i].x+= interpolateSpeed*dt;
-                }
-            }
+    public void update(){
+        Vector3[] newVectorList = offsetAllBy(gameobjectsToVectorPositionList(points), -transform.position);
+        fold.update_vertices_coords(newVectorList);
 
-        }
-    }
+        updateMeshVerts();
+        highlightAllEdges();
+    }   
 
     void highlightPoint(int vertexIndex){
         Vector3 point = mesh.vertices[vertexIndex]+transform.position;
         GameObject pointObject = Instantiate(pointInsta, point, Quaternion.identity);
         pointObject.transform.parent = transform;
         pointObject.name = "Vertex "+ vertexIndex;
+        points.Add(pointObject);
+    }
+
+    void highlightAllPoints(){
+        for(int i = 0; i< mesh.vertices.Length; i++){
+            highlightPoint(i);
+        }
     }
 
     void highlightEdge(int vertexIndex1, int vertexIndex2){
         Vector3 point1 = mesh.vertices[vertexIndex1]+transform.position;
         Vector3 point2 = mesh.vertices[vertexIndex2]+transform.position;
-        GameObject lineObject = Instantiate(lineInsta, point1, Quaternion.identity);
+        string name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
+        GameObject lineObject = (transform.Find(name)) ? transform.Find(name).gameObject : null;
+        if(!lineObject){
+            lineObject = Instantiate(lineInsta, point1, Quaternion.identity);
+            
+            lineObject.transform.parent = transform;
+            lineObject.name = name;
+            // FixedJoint joint = points[vertexIndex1].GetComponent<FixedJoint>();
+            // if(joint){
+            //     joint = points[vertexIndex2].GetComponent<FixedJoint>();
+            //     if(joint){
+            //         Debug.Log("both vertices already have joints, halp");
+            //     }else{
+            //         joint = points[vertexIndex2].AddComponent<FixedJoint>();
+            //     }
+            //     joint.connectedBody = points[vertexIndex1].GetComponent<Rigidbody>();
+            // }else{
+            //     joint = points[vertexIndex1].AddComponent<FixedJoint>();
+            //     joint.connectedBody = points[vertexIndex2].GetComponent<Rigidbody>();
+            // }
+            edgeLines.Add(lineObject);
+        }
         LineRenderer line = lineObject.GetComponent<LineRenderer>();
         line.SetPosition(0, point1);
         line.SetPosition(1, point2);
-        lineObject.transform.parent = transform;
-        lineObject.name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
     }
 
+    void highlightAllEdges(){
+        for(int i = 0; i< fold.edges_vertices.Length; i++){
+            highlightEdge(fold.edges_vertices[i][0], fold.edges_vertices[i][1]);
+        }
+    }
+
+    Vector3[] gameobjectsToVectorPositionList(List<GameObject> objects){
+        Vector3[] vectorList = new Vector3[objects.Count];
+        for(int i = 0; i< vectorList.Length; i++){
+            vectorList[i] = objects[i].transform.position;
+        }
+        return vectorList;
+    }
+
+    Vector3[] offsetAllBy(Vector3[] list, Vector3 offset){
+        for(int i = 0; i< list.Length; i++){
+            list[i]+=offset;
+        }
+        return list;
+    }
 }

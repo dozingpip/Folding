@@ -7,6 +7,7 @@ using SimpleJSON;
 public class Fold {
 	public Vector3[] vertices_coords;
 	public int[][] faces_vertices;
+    public int[][] edges_vertices;
 
 
     public Fold(string file_name)
@@ -43,5 +44,30 @@ public class Fold {
             }
         }
 
+        JSONNode ev = n["edges_vertices"];
+        edges_vertices = new int[ev.Count][];
+        for (int i = 0; i < ev.Count; i++)
+        {
+            edges_vertices[i] = new int[ev[i].Count];
+            for (int j = 0; j < edges_vertices[i].Length; j++)
+            {
+                edges_vertices[i][j] = ev[i][j].AsInt;
+            }
+        }
+    }
+
+    public void update_vertices_coords(Vector3[] newCoords){
+        vertices_coords = newCoords;
+    }
+
+    public Vector3[] vertices_coords_toArray(){
+        List<Vector3> verts = new List<Vector3>();
+        for (int i = 0; i < vertices_coords.Length; i++)
+        {
+            verts.Add(new Vector3( (float)vertices_coords[i][0],
+                                   (float)vertices_coords[i][1],
+                                   (float)vertices_coords[i][2]));
+        }
+        return verts.ToArray();
     }
 }
