@@ -110,10 +110,12 @@ public class Model : MonoBehaviour {
         // the corners and base the uv coordinates on distance from the 0, 0 corner
 
         GetComponent<MeshRenderer>().material = material;
+        mesh.RecalculateBounds();
     }
 
     void updateMeshVerts(){
         mesh.vertices = fold.vertices_coords_toArray();
+        mesh.RecalculateBounds();
     }
 
     public void update(){
@@ -141,6 +143,10 @@ public class Model : MonoBehaviour {
     void highlightEdge(int vertexIndex1, int vertexIndex2){
         Vector3 point1 = mesh.vertices[vertexIndex1]+transform.position;
         Vector3 point2 = mesh.vertices[vertexIndex2]+transform.position;
+        Point p1 = points[vertexIndex1].gameObject.GetComponent<Point>();
+        Point p2 = points[vertexIndex2].gameObject.GetComponent<Point>();
+        p1.newConnection(p2);
+        p2.newConnection(p1);
         string name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
         GameObject lineObject = (transform.Find(name)) ? transform.Find(name).gameObject : null;
         if(!lineObject){
