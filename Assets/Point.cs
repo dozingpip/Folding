@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Point : MonoBehaviour {
-	public GameObject snapZonePrefab;
 	List<Point> connectedPoints;
+	private float SnapDistance = 1f;
+	private float RungAngleInterval = 360f`;
+	private Vector3 LastAngularVelocity = Vector3.zero;
+	private Transform InitialAttachPoint;
+	public float currentAngle;
+
+	void Awake(){
+		GetComponent<Rigidbody>().maxAngularVelocity = 100f;
+	}
+
 	// Use this for initialization
 	void Start () {
 		connectedPoints = new List<Point>();
-	}
-
-	void createSnapDropZones(){
-		List<Vector3> possibleDropPoints = getPossiblePoints();
-		foreach(Vector3 possibleDropPoint in possibleDropPoints){
-			GameObject.Instantiate(snapZonePrefab, possibleDropPoint, transform.rotation);
-		}
 	}
 
 	List<Vector3> getPossiblePoints(){
@@ -32,6 +34,9 @@ public class Point : MonoBehaviour {
 	}
 
 	public void newConnection(Point connectedTo){
-		connectedPoints.Add(connectedTo);
+		if(connectedPoints!=null)
+			connectedPoints.Add(connectedTo);
+		else
+			Debug.Log("connected points not initialized");
 	}
 }
