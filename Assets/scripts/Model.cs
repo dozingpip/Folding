@@ -145,7 +145,8 @@ public class Model : MonoBehaviour {
         Vector3 point2 = mesh.vertices[vertexIndex2]+transform.position;
         Point p1 = points[vertexIndex1].gameObject.GetComponent<Point>();
         Point p2 = points[vertexIndex2].gameObject.GetComponent<Point>();
-        
+        p1.Awake();
+        p2.Awake();
         p1.newConnection(p2);
         p2.newConnection(p1);
         string name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
