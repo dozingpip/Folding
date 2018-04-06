@@ -160,7 +160,9 @@ namespace NewtonVR
 
             Instances.Add(this);
 
+            Debug.Log("initializing!");
             NVRInteractables.Initialize();
+            Debug.Log("initialized.");
 
             if (Head == null)
             {

@@ -15,13 +15,14 @@ public class Model : MonoBehaviour {
     public string foldFilePath ="folds";
     public Dropdown dropdown;
 
-    private List<GameObject> points;
+    private List<Point> points;
     private List<GameObject> edgeLines;
     private Fold fold;
     private Mesh mesh;
 
     // Use this for initialization
     void Start () {
+        Debug.Log("starting model creation");
         // DirectoryInfo levelDirectoryPath = new DirectoryInfo(Application.dataPath);
         // FileInfo[] fileInfo = levelDirectoryPath.GetFiles("*.*", SearchOption.AllDirectories);
                  
@@ -47,12 +48,15 @@ public class Model : MonoBehaviour {
 
         createMesh();
         
-        points = new List<GameObject>();
+        points = new List<Point>();
         highlightAllPoints();
 
         edgeLines = new List<GameObject>();
         highlightAllEdges();
         gameObject.tag = "fold";
+
+        points[0].createHingeJoint();
+        Debug.Log("finished model creation");
     }
 
     void Update(){
@@ -119,7 +123,7 @@ public class Model : MonoBehaviour {
     }
 
     public void update(){
-        Vector3[] newVectorList = offsetAllBy(gameobjectsToVectorPositionList(points), -transform.position);
+        Vector3[] newVectorList = offsetAllBy(PointsToVectorPositionList(points), -transform.position);
         fold.update_vertices_coords(newVectorList);
 
         updateMeshVerts();
@@ -131,7 +135,7 @@ public class Model : MonoBehaviour {
         GameObject pointObject = Instantiate(pointInsta, point, Quaternion.identity);
         pointObject.transform.parent = transform;
         pointObject.name = "Vertex "+ vertexIndex;
-        points.Add(pointObject);
+        points.Add(pointObject.GetComponent<Point>());
     }
 
     void highlightAllPoints(){
@@ -143,32 +147,18 @@ public class Model : MonoBehaviour {
     void highlightEdge(int vertexIndex1, int vertexIndex2){
         Vector3 point1 = mesh.vertices[vertexIndex1]+transform.position;
         Vector3 point2 = mesh.vertices[vertexIndex2]+transform.position;
-        Point p1 = points[vertexIndex1].gameObject.GetComponent<Point>();
-        Point p2 = points[vertexIndex2].gameObject.GetComponent<Point>();
-        p1.Awake();
-        p2.Awake();
+        Point p1 = points[vertexIndex1];
+        Point p2 = points[vertexIndex2];
+        // p1.Awake();
+        // p2.Awake();
         p1.newConnection(p2);
         p2.newConnection(p1);
         string name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
         GameObject lineObject = (transform.Find(name)) ? transform.Find(name).gameObject : null;
         if(!lineObject){
             lineObject = Instantiate(lineInsta, point1, Quaternion.identity);
-            
             lineObject.transform.parent = transform;
             lineObject.name = name;
-            // FixedJoint joint = points[vertexIndex1].GetComponent<FixedJoint>();
-            // if(joint){
-            //     joint = points[vertexIndex2].GetComponent<FixedJoint>();
-            //     if(joint){
-            //         Debug.Log("both vertices already have joints, halp");
-            //     }else{
-            //         joint = points[vertexIndex2].AddComponent<FixedJoint>();
-            //     }
-            //     joint.connectedBody = points[vertexIndex1].GetComponent<Rigidbody>();
-            // }else{
-            //     joint = points[vertexIndex1].AddComponent<FixedJoint>();
-            //     joint.connectedBody = points[vertexIndex2].GetComponent<Rigidbody>();
-            // }
             edgeLines.Add(lineObject);
         }
         LineRenderer line = lineObject.GetComponent<LineRenderer>();
@@ -182,10 +172,10 @@ public class Model : MonoBehaviour {
         }
     }
 
-    Vector3[] gameobjectsToVectorPositionList(List<GameObject> objects){
-        Vector3[] vectorList = new Vector3[objects.Count];
+    Vector3[] PointsToVectorPositionList(List<Point> p){
+        Vector3[] vectorList = new Vector3[p.Count];
         for(int i = 0; i< vectorList.Length; i++){
-            vectorList[i] = objects[i].transform.position;
+            vectorList[i] = p[i].gameObject.transform.position;
         }
         return vectorList;
     }
