@@ -13,6 +13,8 @@ public class Point : NVRInteractableRotator
 	public Vector3 position;
 	public string name;
 	public Transform transform;
+	// this point's index in the mesh vertices array, should be same as name without "vertex"
+	public int index;
 	HingeJoint hinge;
 
 	protected override void Awake(){
