@@ -26,6 +26,8 @@ public class Model : MonoBehaviour {
     // history of position changes of points
     private Stack<List<Vector3>> positionChange;
 
+    private GameObject mostRecentlyChangedPoint = null;
+
     // Use this for initialization
     void Start () {
         Debug.Log("starting model creation");
@@ -64,12 +66,8 @@ public class Model : MonoBehaviour {
         highlightAllEdges();
         gameObject.tag = "fold";
 
-        points[0].createHingeJoint();
+        //points[0].createHingeJoint();
         Debug.Log("finished model creation");
-    }
-
-    void Update(){
-        update();
     }
 
     void createMesh(){
@@ -131,74 +129,98 @@ public class Model : MonoBehaviour {
         mesh.RecalculateBounds();
     }
 
-    // change the mesh, points, and edges based on which points was moved
-    public void update(GameObject whichPoint = null){
-        // get the last vector list without removing it from the stack
-        List<Vector3> oldVectorList = positionChange.Peek();
-        List<Vector3> newVectorList = offsetAllBy(vectorPoints, -transform.position);
+    public void Update(){}
+
+    // update vector points array based on which points was moved
+    public void updateVectorArray(GameObject whichPoint){
+        mostRecentlyChangedPoint = whichPoint;
+    }
+
+    // goes before PreRender
+    public void OnWillRenderObject(){
+        if(mostRecentlyChangedPoint != null){
+            List<Vector3> oldVectorList = positionChange.Peek();
+            Point p = mostRecentlyChangedPoint.GetComponent<Point>();
+            List<Vector3> newVectors = vectorPoints;
+            newVectors[p.index] = p.position;
+            positionChange.Push(newVectors);
+            if(isValidPosition(p, oldVectorList)){
+                positionChange.Push(newVectors);
+            }
+            mostRecentlyChangedPoint = null;
+        }
+    }
+
+    public void onPreRender(){
+        List<Vector3> newVectorList = offsetAllBy(positionChange.Peek(), -transform.position);
         fold.update_vertices_coords(newVectorList.ToArray());
 
         updateMeshVerts();
         highlightAllEdges();
-
-        if(!isValidPosition(whichPoint.GetComponent<Point>(), oldVectorList)){
-            vectorPoints = positionChange.Pop();
-        }
     }
 
     bool isValidPosition(Point point, List<Vector3> previousList){
-        if(vectorPoints.Contains(point.position)){
-            Debug.Log("has the point in my vectorPoints at index "+ vectorPoints.IndexOf(point.position));
-        }
+        // if(vectorPoints.Contains(point.position)){
+        //     Debug.Log("has the point in my vectorPoints at index "+ vectorPoints.IndexOf(point.position));
+        // }
+        
+        // List<Vector3> currentList = new List<Vector3>();
+        // currentList.AddRange(mesh.vertices);
+        // if(!compareDeterminantSets(point, previousList, currentList)){
+        //     Debug.Log("some determinants have changed");
+        //     return false;
+        // }
 
-        int[] determinantSignAfter = new int[mesh.triangles.Length/3];
-        for(int i = 0; i<mesh.triangles.Length; i+=3){
-            int[] plane = {mesh.triangles[i], mesh.triangles[i+1], mesh.triangles[i+2]};
-            Vector3 diff01 = mesh.vertices[plane[1]] - mesh.vertices[plane[0]];
-            Vector3 diff02 = mesh.vertices[plane[2]] - mesh.vertices[plane[0]];
-            Vector3 diff0x = point.position - mesh.vertices[plane[0]];
-            float determinant = diff01.x*diff02.y*diff0x.z +
-                                diff02.x*diff0x.y*diff01.z +
-                                diff0x.x*diff01.y*diff02.z -
-                                diff0x.x*diff02.y*diff01.z -
-                                diff02.x*diff01.y*diff0x.z -
-                                diff01.x*diff0x.y*diff02.z;
-            if(determinant> 0){
-                determinantSignAfter[i] = 1;
-            }else{
-                determinantSignAfter[i] = 0;
-            }
-        }
-        int[] determinantSignBefore = new int[mesh.triangles.Length/3];
-        for(int i = 0; i<mesh.triangles.Length; i+=3){
-            int[] plane = {mesh.triangles[i], mesh.triangles[i+1], mesh.triangles[i+2]};
-            Vector3 diff01 = previousList[plane[1]] - previousList[plane[0]];
-            Vector3 diff02 = previousList[plane[2]] - previousList[plane[0]];
-            Vector3 diff0x = point.position - previousList[plane[0]];
-            float determinant = diff01.x*diff02.y*diff0x.z +
-                                diff02.x*diff0x.y*diff01.z +
-                                diff0x.x*diff01.y*diff02.z -
-                                diff0x.x*diff02.y*diff01.z -
-                                diff02.x*diff01.y*diff0x.z -
-                                diff01.x*diff0x.y*diff02.z;
-            if(determinant> 0){
-                determinantSignBefore[i] = 1;
-            }else{
-                determinantSignBefore[i] = 0;
-            }
-        }
-        for(int i = 0; i<mesh.triangles.Length; i+=3){
-            if(determinantSignBefore[i]!= determinantSignAfter[i]){
-                Debug.Log("invalid position");
-                return false;
-            }else{
-                Debug.Log("valid position");
-                return true;
-            }
-        }
-        return false;
+        // for(int i = 0; i<point.connectedPoints.Count; i++){
+        //     Point connectedPoint = point.connectedPoints[i];
+        //     // the current distance to the connected point (after the change)
+        //     float currentDistance = Vector3.Distance(connectedPoint.position, point.position);
+        //     Vector3 pointBeforeChange = previousList[connectedPoint.index];
+        //     float distanceBeforeChange = Vector3.Distance(point.position, pointBeforeChange);
+        //     if(currentDistance!=distanceBeforeChange){
+        //         return false;
+        //     }
+        // }
+
+        return true;
     }
 
+    bool compareDeterminantSets(Point point, List<Vector3> list1, List<Vector3> list2){
+        int[] determinants1 = getDeterminants(point, list1);
+        int[] determinants2 = getDeterminants(point, list2);
+        for(int i = 0; i<mesh.triangles.Length; i+=3){
+            if(determinants1[i]!= determinants2[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    int[] getDeterminants(Point point, List<Vector3> list){
+        // get the determinants of plane to point before the point has been moved
+        int[] determinantSign = new int[mesh.triangles.Length/3];
+        for(int i = 0; i<mesh.triangles.Length; i+=3){
+            // to do: exclude planes the point is connected to
+            int[] plane = {mesh.triangles[i], mesh.triangles[i+1], mesh.triangles[i+2]};
+            Vector3 diff1 = list[plane[1]] - list[plane[0]];
+            Vector3 diff2 = list[plane[2]] - list[plane[0]];
+            Vector3 diff3 = point.position - list[plane[0]];
+            
+            float determinant = diff1.x*diff2.y*diff3.z +
+                                diff2.x*diff3.y*diff1.z +
+                                diff3.x*diff1.y*diff2.z -
+                                diff3.x*diff2.y*diff1.z -
+                                diff2.x*diff1.y*diff3.z -
+                                diff1.x*diff3.y*diff2.z;
+            if(determinant> 0){
+                determinantSign[i] = 1;
+            }else{
+                determinantSign[i] = 0;
+            }
+        }
+
+        return determinantSign;
+    }
 
     void highlightPoint(int vertexIndex){
         Vector3 point = mesh.vertices[vertexIndex]+transform.position;
