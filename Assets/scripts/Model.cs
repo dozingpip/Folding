@@ -9,11 +9,13 @@ public class Model : MonoBehaviour {
     public string interpolate_to_file_name = "miura-ori";
     public float interpolateSpeed = 0.1f;
     public Material material;
-    public GameObject pointInsta;
-    public GameObject lineInsta;
+    public GameObject pointPrefab;
+    public GameObject linePrefab;
+    public GameObject attachJointPrefab;
     private List<string> foldFiles;
     public string foldFilePath ="folds";
     public Dropdown dropdown;
+    public LineRenderer foldLineRenderer;
 
     // point objects (the object the user interacts with)
     private List<Point> points;
@@ -25,6 +27,8 @@ public class Model : MonoBehaviour {
     private Mesh mesh;
     // history of position changes of points
     private Stack<List<Vector3>> positionChange;
+    private Queue<Point> pointQueue;
+    private Queue<Line> lineQueue;
 
     private GameObject mostRecentlyChangedPoint = null;
 
@@ -42,16 +46,18 @@ public class Model : MonoBehaviour {
         //     // etc.
         // }
         // file_name = //currently selected option from foldFiles
-        string path = Application.dataPath + "/Resources/"+foldFilePath;
-        string[] filePaths = Directory.GetFiles(@path, "*.fold");
-        List<string> dropOptions = new List<string>();
-        foreach(string fileName in filePaths){
-            dropOptions.Add(fileName);
-        }
-        dropdown.ClearOptions();
-        dropdown.AddOptions(dropOptions);
+        // string path = Application.dataPath + "/Resources/"+foldFilePath;
+        // string[] filePaths = Directory.GetFiles(@path, "*.fold");
+        // List<string> dropOptions = new List<string>();
+        // foreach(string fileName in filePaths){
+        //     dropOptions.Add(fileName);
+        // }
+        // dropdown.ClearOptions();
+        // dropdown.AddOptions(dropOptions);
 
         fold = new Fold(file_name);
+        pointQueue = new Queue<Point>();
+        lineQueue = new Queue<Line>();
         
         createMesh();
 
@@ -66,7 +72,6 @@ public class Model : MonoBehaviour {
         highlightAllEdges();
         gameObject.tag = "fold";
 
-        //points[0].createHingeJoint();
         Debug.Log("finished model creation");
     }
 
@@ -136,6 +141,108 @@ public class Model : MonoBehaviour {
         mostRecentlyChangedPoint = whichPoint;
     }
 
+    public void pointSelected(Point p){
+        if(pointQueue.Count>1){
+            pointQueue.Dequeue();
+            pointQueue.Enqueue(p);
+        }else{
+            pointQueue.Enqueue(p);
+        }
+    }
+
+    public void pointDeselected(Point p){
+        if(pointQueue.Contains(p)){
+            Point peek = pointQueue.Peek();
+            if(peek == p){
+                pointQueue.Dequeue();
+            }else{
+                pointQueue.Dequeue();
+                pointQueue.Dequeue();
+                pointQueue.Enqueue(peek);
+            }
+        }
+    }
+
+    public void lineSelected(Line l){
+        if(lineQueue.Count>1){
+            lineQueue.Dequeue();
+            lineQueue.Enqueue(l);
+        }else{
+            lineQueue.Enqueue(l);
+        }
+    }
+
+    public void lineDeselected(Line l){
+        if(lineQueue.Contains(l)){
+            Line peek = lineQueue.Peek();
+            if(peek == l){
+                lineQueue.Dequeue();
+            }else{
+                lineQueue.Dequeue();
+                lineQueue.Dequeue();
+                lineQueue.Enqueue(peek);
+            }
+        }
+    }
+
+    public void foldIt(){
+        // using Huzita's axioms for determining geometric
+        // constructibility
+        if(pointQueue.Count == 2 && lineQueue.Count == 0){
+            // Huzita's 1st axiom
+            foldLineRenderer.SetPosition(0, pointQueue.Dequeue().position);
+            foldLineRenderer.SetPosition(1, pointQueue.Dequeue().position);
+            // rotator axis: the fold line
+            // allowed to rotate: just the vertex of the plane 
+            // that wasn't included in fold line, aka the only point
+            // both points are connected to.
+        }else if(pointQueue.Count == 0 && lineQueue.Count == 2){
+            //Huzita's 3rd axiom
+            Line lineA = lineQueue.Dequeue();
+            Line lineB = lineQueue.Dequeue();
+            float distanceA = Vector3.Distance(lineA.pointA.position, lineB.pointA.position);
+            float distanceB = Vector3.Distance(lineA.pointA.position, lineB.pointB.position);
+            Vector3 secondPoint = distanceA <= distanceB ? lineB.pointA.position : lineB.pointB.position;
+            Vector3 perpLine = Vector3.Cross(lineA.pointA.position, secondPoint);
+            foldLineRenderer.SetPosition(0, perpLine.normalized);
+            foldLineRenderer.SetPosition(1, perpLine);
+            // rotator axis: fold line
+            // allowed to rotate: lineA        
+        }else if(pointQueue.Count == 1 && lineQueue.Count == 1){
+            //Huzita's 4th axiom
+            Line line = lineQueue.Dequeue();
+            Point point = pointQueue.Dequeue();
+            Vector3 cross = Vector3.Cross(line.pointA.position, line.pointB.position);
+            foldLineRenderer.SetPosition(0, cross);
+            foldLineRenderer.SetPosition(1, point.position);
+            // rotator axis: fold line
+            // allowed to rotate: line.pointA
+            HingeJoint hinge = line.pointA.gameObject.AddComponent<HingeJoint>();
+            hinge.axis = cross;
+            JointLimits limits = hinge.limits;
+            limits.min = 0;
+            limits.bounciness = 0;
+            limits.bounceMinVelocity = 0.2f;
+            limits.max = 350;
+            hinge.limits = limits;
+            hinge.useLimits = true;
+
+        }else if(pointQueue.Count == 2 && lineQueue.Count == 1){
+            //Huzita's 5th axiom
+            Point pointA = pointQueue.Dequeue();
+            Point pointB = pointQueue.Dequeue();
+            Line line = lineQueue.Dequeue();
+            Vector3 cross = Vector3.Cross(line.pointA.position, line.pointB.position);
+            foldLineRenderer.SetPosition(0, cross);
+            foldLineRenderer.SetPosition(1, pointB.position);
+            // rotator axis: fold line
+            // allowed to rotate: pointA
+
+        }
+        
+
+    }
+
     // goes before PreRender
     public void OnWillRenderObject(){
         if(mostRecentlyChangedPoint != null){
@@ -144,9 +251,7 @@ public class Model : MonoBehaviour {
             List<Vector3> newVectors = vectorPoints;
             newVectors[p.index] = p.position;
             positionChange.Push(newVectors);
-            if(isValidPosition(p, oldVectorList)){
-                positionChange.Push(newVectors);
-            }
+            
             mostRecentlyChangedPoint = null;
         }
     }
@@ -159,72 +264,9 @@ public class Model : MonoBehaviour {
         highlightAllEdges();
     }
 
-    bool isValidPosition(Point point, List<Vector3> previousList){
-        // if(vectorPoints.Contains(point.position)){
-        //     Debug.Log("has the point in my vectorPoints at index "+ vectorPoints.IndexOf(point.position));
-        // }
-        
-        // List<Vector3> currentList = new List<Vector3>();
-        // currentList.AddRange(mesh.vertices);
-        // if(!compareDeterminantSets(point, previousList, currentList)){
-        //     Debug.Log("some determinants have changed");
-        //     return false;
-        // }
-
-        // for(int i = 0; i<point.connectedPoints.Count; i++){
-        //     Point connectedPoint = point.connectedPoints[i];
-        //     // the current distance to the connected point (after the change)
-        //     float currentDistance = Vector3.Distance(connectedPoint.position, point.position);
-        //     Vector3 pointBeforeChange = previousList[connectedPoint.index];
-        //     float distanceBeforeChange = Vector3.Distance(point.position, pointBeforeChange);
-        //     if(currentDistance!=distanceBeforeChange){
-        //         return false;
-        //     }
-        // }
-
-        return true;
-    }
-
-    bool compareDeterminantSets(Point point, List<Vector3> list1, List<Vector3> list2){
-        int[] determinants1 = getDeterminants(point, list1);
-        int[] determinants2 = getDeterminants(point, list2);
-        for(int i = 0; i<mesh.triangles.Length; i+=3){
-            if(determinants1[i]!= determinants2[i]){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    int[] getDeterminants(Point point, List<Vector3> list){
-        // get the determinants of plane to point before the point has been moved
-        int[] determinantSign = new int[mesh.triangles.Length/3];
-        for(int i = 0; i<mesh.triangles.Length; i+=3){
-            // to do: exclude planes the point is connected to
-            int[] plane = {mesh.triangles[i], mesh.triangles[i+1], mesh.triangles[i+2]};
-            Vector3 diff1 = list[plane[1]] - list[plane[0]];
-            Vector3 diff2 = list[plane[2]] - list[plane[0]];
-            Vector3 diff3 = point.position - list[plane[0]];
-            
-            float determinant = diff1.x*diff2.y*diff3.z +
-                                diff2.x*diff3.y*diff1.z +
-                                diff3.x*diff1.y*diff2.z -
-                                diff3.x*diff2.y*diff1.z -
-                                diff2.x*diff1.y*diff3.z -
-                                diff1.x*diff3.y*diff2.z;
-            if(determinant> 0){
-                determinantSign[i] = 1;
-            }else{
-                determinantSign[i] = 0;
-            }
-        }
-
-        return determinantSign;
-    }
-
     void highlightPoint(int vertexIndex){
         Vector3 point = mesh.vertices[vertexIndex]+transform.position;
-        GameObject pointObject = Instantiate(pointInsta, point, Quaternion.identity);
+        GameObject pointObject = Instantiate(pointPrefab, point, Quaternion.identity);
         pointObject.transform.parent = transform;
         pointObject.name = "Vertex "+ vertexIndex;
         Point pointComponent = pointObject.GetComponent<Point>();
@@ -244,21 +286,19 @@ public class Model : MonoBehaviour {
         Vector3 point2 = mesh.vertices[vertexIndex2]+transform.position;
         Point p1 = points[vertexIndex1];
         Point p2 = points[vertexIndex2];
-        // p1.Awake();
-        // p2.Awake();
+
         p1.newConnection(p2);
         p2.newConnection(p1);
         string name = "Line from "+ vertexIndex1 + " to "+ vertexIndex2;
         GameObject lineObject = (transform.Find(name)) ? transform.Find(name).gameObject : null;
         if(!lineObject){
-            lineObject = Instantiate(lineInsta, point1, Quaternion.identity);
+            lineObject = Instantiate(linePrefab, point1, Quaternion.identity);
             lineObject.transform.parent = transform;
             lineObject.name = name;
             edgeLines.Add(lineObject);
         }
-        LineRenderer line = lineObject.GetComponent<LineRenderer>();
-        line.SetPosition(0, point1);
-        line.SetPosition(1, point2);
+        Line line = lineObject.GetComponent<Line>();
+        line.SetPosition(p1, p2);
     }
 
     void highlightAllEdges(){

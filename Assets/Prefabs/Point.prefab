@@ -23,8 +23,10 @@ GameObject:
   - component: {fileID: 135958738217872506}
   - component: {fileID: 23593353117421880}
   - component: {fileID: 54117441501475368}
-  - component: {fileID: 114746890428085828}
   - component: {fileID: 114360230970418574}
+  - component: {fileID: 114001034067041484}
+  - component: {fileID: 114746890428085828}
+  - component: {fileID: 114063201716753948}
   m_Layer: 0
   m_Name: Point
   m_TagString: Untagged
@@ -101,22 +103,48 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &114001034067041484
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1740729558838248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af499cd9cd6135643b406ecc806d8a53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Rigidbody: {fileID: 0}
+  Item: {fileID: 0}
+  IsAttached: 1
+--- !u!114 &114063201716753948
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1740729558838248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ed3ffc3d32d0de489b2cfe89e395cc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  highlightMaterial: {fileID: 2100000, guid: 2a9006313e2e15a44b335925545af125, type: 2}
 --- !u!114 &114360230970418574
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1740729558838248}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa4a39dec1a23a043a14d554ccce8fe0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   Rigidbody: {fileID: 54117441501475368}
   CanAttach: 1
-  AllowTwoHanded: 1
-  DisableKinematicOnAttach: 1
-  EnableKinematicOnDetach: 1
+  AllowTwoHanded: 0
+  DisableKinematicOnAttach: 0
+  EnableKinematicOnDetach: 0
   DropDistance: 1
   EnableGravityOnDetach: 0
   AttachedHands: []
@@ -138,14 +166,9 @@ MonoBehaviour:
       Culture=neutral, PublicKeyToken=null
   OnBeginInteraction:
     m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  OnEndInteraction:
-    m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114746890428085828}
-        m_MethodName: changedPosition
+        m_MethodName: select
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -155,6 +178,11 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+    m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+      Culture=neutral, PublicKeyToken=null
+  OnEndInteraction:
+    m_PersistentCalls:
+      m_Calls: []
     m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &114746890428085828
@@ -173,7 +201,6 @@ MonoBehaviour:
   name: 
   transform: {fileID: 0}
   index: 0
-  parentModel: {fileID: 0}
 --- !u!135 &135958738217872506
 SphereCollider:
   m_ObjectHideFlags: 1

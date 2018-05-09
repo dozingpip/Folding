@@ -5,7 +5,15 @@ licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - material: {fileID: 2100000, guid: 378458925bffe474ca4d96c27109f5b3, type: 2}
+  - pointPrefab: {fileID: 1740729558838248, guid: 44be165d5b7c7654d981292b580c4cde,
+      type: 2}
+  - linePrefab: {fileID: 1876286520824774, guid: 70242a96537a237489486ae886b4e025,
+      type: 2}
+  - attachJointPrefab: {fileID: 1597013766177644, guid: 20263a93eb31c044e8cf57e7b889903a,
+      type: 2}
+  - dropdown: {instanceID: 0}
   executionOrder: 500
   icon: {instanceID: 0}
   userData: 
